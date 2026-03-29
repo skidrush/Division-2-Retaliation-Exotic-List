@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Division 2 | Exotic Tracker</title>
+    <style>
+        /* CSS RESET & VARIABLES */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --orange: #ff6600;
+            --orange-dim: #cc5200;
+            --bg-body: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --bg-input: #222222;
+            --text-main: #eeeeee;
+            --text-dim: #888888;
+            --border: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* HEADER SECTION */
+        header {
+            text-align: center;
+            padding: 20px 0 40px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--orange);
+            border-bottom: 1px solid var(--orange);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        /* STICKY TRACKER BAR */
+        .tracker-ui {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .stat-val { color: var(--orange); font-size: 1.1rem; }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--orange-dim), var(--orange));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: #fff;
+            border-radius: 4px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #search-input:focus { border-color: var(--orange); }
+
+        /* GRID SYSTEM */
+        .faction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .faction-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--orange);
+            border-radius: 4px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .faction-title {
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: var(--orange);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .group-tag {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin: 15px 0 8px;
+            letter-spacing: 1px;
+        }
+
+        /* CHECKBOX LIST */
+        .item-list { list-style: none; }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .item-row:hover { background: rgba(255,255,255,0.03); }
+
+        input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            margin-right: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--orange);
+            border-color: var(--orange);
+        }
+
+        input[type="checkbox"]:checked::after {
+            content: "✔";
+            color: #000;
+            font-size: 12px;
+            position: absolute;
+            top: -1px;
+            left: 2px;
+        }
+
+        .item-label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        input[type="checkbox"]:checked + .item-label {
+            color: var(--text-dim);
+            text-decoration: line-through;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .tracker-ui { padding: 15px; top: 10px; }
+            .faction-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header>
+        <h1>Retaliation Exotic Blueprint Drops</h1>
+    </header>
+
+    <section class="tracker-ui">
+        <div class="stats-header">
+            <span>Deployment Status</span>
+            <span class="stat-val" id="progress-text">0 / 43 (0%)</span>
+        </div>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <input type="text" id="search-input" placeholder="Search by name or faction..." onkeyup="handleSearch()">
+    </section>
+
+    <main class="faction-grid" id="faction-grid">
+        </main>
+</div>
+
+<script>
+    const data = [
+        {
+            name: "Rikers",
+            groups: [
+                { title: "Kill Squad", items: ["Bullet King", "Ninjabike Backpack", "Bloody Knuckles"] }
+            ]
+        },
+        {
+            name: "True Sons",
+            groups: [
+                { title: "Kill Squad", items: ["Lady Death", "Doctor Home", "Catharsis", "St. Elmo's Engine", "Dread Edict", "Busy Little Bee", "Shocker Punch", "Pakhan"] },
+                { title: "Completion", items: ["Blue Screen", "BTSU Datagloves", "Tardigrade", "Exodus Gloves"] }
+            ]
+        },
+        {
+            name: "Outcasts",
+            groups: [
+                { title: "Kill Squad", items: ["Backfire", "Pestilence", "Sweet Dreams", "Collector", "Memento", "Acosta's Go-Bag", "Acosta's Kneepads", "Shroud"] },
+                { title: "Completion", items: ["Vile", "Rugged Gauntlets", "Waveform", "Nimble Holster"] }
+            ]
+        },
+        {
+            name: "Hyenas",
+            groups: [
+                { title: "Kill Squad", items: ["Merciless", "Coyote's Mask", "Sawyer's Kneepads", "Overlord", "Strega", "Centurion's Scabbard", "Sacrum Imperium", "Oxpecker"] },
+                { title: "Completion", items: ["Chameleon", "Mosquito", "Mantis", "Scorpio", "Overdogs"] }
+            ]
+        },
+        {
+            name: "Cleaners",
+            groups: [
+                { title: "Kill Squad", items: ["Iron Lung", "Ninjabike Kneepads", "Imperial Dynasty"] }
+            ]
+        }
+    ];
+
+    const grid = document.getElementById('faction-grid');
+
+    // INITIALIZE UI
+    function init() {
+        data.forEach(faction => {
+            const card = document.createElement('div');
+            card.className = 'faction-card';
+            card.setAttribute('data-faction', faction.name.toLowerCase());
+
+            let content = `<h2 class="faction-title">${faction.name}</h2>`;
+
+            faction.groups.forEach(group => {
+                content += `<div class="group-tag">${group.title}</div><ul class="item-list">`;
+                group.items.forEach(item => {
+                    const cleanID = item.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+                    content += `
+                        <li class="item-row" data-name="${item.toLowerCase()}">
+                            <input type="checkbox" id="${cleanID}" class="tracker-cb" onchange="updateProgress()">
+                            <label for="${cleanID}" class="item-label">${item}</label>
+                        </li>`;
+                });
+                content += `</ul>`;
+            });
+
+            card.innerHTML = content;
+            grid.appendChild(card);
+        });
+
+        loadData();
+    }
+
+    function updateProgress() {
+        const checkboxes = document.querySelectorAll('.tracker-cb');
+        const checked = document.querySelectorAll('.tracker-cb:checked');
+        const count = checked.length;
+        const total = checkboxes.length;
+        const percent = Math.round((count / total) * 100);
+
+        document.getElementById('progress-bar').style.width = percent + '%';
+        document.getElementById('progress-text').innerText = `${count} / ${total} (${percent}%)`;
+
+        // Save State
+        const state = Array.from(checkboxes).map(cb => ({ id: cb.id, checked: cb.checked }));
+        localStorage.setItem('div2_exotic_data', JSON.stringify(state));
+    }
+
+    function handleSearch() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const cards = document.querySelectorAll('.faction-card');
+
+        cards.forEach(card => {
+            const factionMatch = card.getAttribute('data-faction').includes(query);
+            const items = card.querySelectorAll('.item-row');
+            let itemMatchFound = false;
+
+            items.forEach(item => {
+                const itemName = item.getAttribute('data-name');
+                if (itemName.includes(query) || factionMatch) {
+                    item.classList.remove('hidden');
+                    itemMatchFound = true;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            card.classList.toggle('hidden', !itemMatchFound);
+        });
+    }
+
+    function loadData() {
+        const saved = JSON.parse(localStorage.getItem('div2_exotic_data'));
+        if (saved) {
+            saved.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el) el.checked = item.checked;
+            });
+        }
+        updateProgress();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
